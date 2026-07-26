@@ -6,6 +6,40 @@ import { URLInput } from "@/components/URLInput";
 import { MediaCard, type MediaData } from "@/components/MediaCard";
 import { AlertCircle } from "lucide-react";
 
+async function fetchMetadata(url: string): Promise<MediaData> {
+  // NEXT_PUBLIC_API_URL points to Render backend in production
+  const apiBase = process.env.NEXT_PUBLIC_API_URL;
+  const endpoint =
+    apiBase && !apiBase.includes("your-app") && !apiBase.includes("backend-your")
+      ? apiBase
+      : "/api/analyze"; // fallback for local dev only
+
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ url: url.trim() }),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok || !data.success) {
+    throw new Error(data.message || "Failed to analyze the provided URL.");
+  }
+
+  return {
+    title: data.title,
+    creator: data.creator,
+    caption: data.caption,
+    hashtags: data.hashtags || [],
+    thumbnail: data.thumbnail,
+    downloadUrl: data.downloadUrl,
+    extension: data.extension || "mp4",
+    platform: data.platform || "other",
+  };
+}
+
 export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -17,33 +51,13 @@ export default function Home() {
     setMediaData(null);
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/analyze";
-      const response = await fetch(apiUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Bypass-Tunnel-Reminder": "true",
-        },
-        body: JSON.stringify({ url }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok || !data.success) {
-        throw new Error(data.message || "Failed to analyze URL");
-      }
-
-      setMediaData({
-        title: data.title,
-        creator: data.creator,
-        caption: data.caption,
-        hashtags: data.hashtags || [],
-        thumbnail: data.thumbnail,
-        downloadUrl: data.downloadUrl,
-      });
-    } catch (err: any) {
+      const data = await fetchMetadata(url);
+      setMediaData(data);
+    } catch (err: unknown) {
       console.error(err);
-      setError(err.message || "An unexpected error occurred. Please try again.");
+      const message =
+        err instanceof Error ? err.message : "An unexpected error occurred. Please try again.";
+      setError(message);
     } finally {
       setIsLoading(false);
     }
@@ -93,7 +107,7 @@ export default function Home() {
                 <MediaCard data={mediaData} />
               </motion.div>
             )}
-            
+
             {isLoading && !mediaData && !error && (
               <motion.div
                 key="loading-skeleton"
