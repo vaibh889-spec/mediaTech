@@ -1,5 +1,5 @@
 {
-  "name": "backend",
+  "name": "mediafetch-backend",
   "version": "1.0.0",
   "main": "dist/index.js",
   "scripts": {
@@ -11,8 +11,12 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "",
+  "engines": {
+    "node": ">=20"
+  },
+  "description": "MediaFetch backend API server",
   "dependencies": {
+    "compression": "^1.8.0",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
@@ -23,11 +27,10 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@types/compression": "^1.7.5",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/node": "^26.1.1",
-    "nodemon": "^3.1.14",
-    "ts-node": "^10.9.2",
     "tsx": "^4.23.1",
     "typescript": "^5.9.3"
   }

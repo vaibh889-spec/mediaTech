@@ -136,10 +136,7 @@ async function extractWithYtDlp(url: string): Promise<ExtractedMedia> {
   const caption = (mediaInfo.description as string) || "";
   const platform = detectPlatform(url, mediaInfo.extractor as string | undefined);
 
-  // We don't extract the direct CDN URL here anymore — the /api/download route
-  // calls yt-dlp directly to stream. But we still provide a best-guess URL for
-  // quick proxying in case yt-dlp streaming is too slow.
-  const bestUrl = (mediaInfo.url as string) || (mediaInfo.webpage_url as string) || url;
+
 
   return {
     title: (mediaInfo.title as string) || "Unknown Title",

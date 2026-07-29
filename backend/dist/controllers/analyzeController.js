@@ -6,7 +6,7 @@ const mediaService_1 = require("../services/mediaService");
 const analyzeSchema = zod_1.z.object({
     url: zod_1.z.string().url('Invalid URL format'),
 });
-const analyzeUrl = async (req, res, next) => {
+const analyzeUrl = async (req, res) => {
     try {
         const parseResult = analyzeSchema.safeParse(req.body);
         if (!parseResult.success) {
@@ -22,10 +22,11 @@ const analyzeUrl = async (req, res, next) => {
         });
     }
     catch (error) {
-        console.error('Error analyzing URL:', error.message);
+        const message = error instanceof Error ? error.message : 'Failed to analyze the provided URL.';
+        console.error('Error analyzing URL:', message);
         res.status(500).json({
             success: false,
-            message: error.message || 'Failed to analyze the provided URL. Make sure it is public and supported.'
+            message,
         });
     }
 };

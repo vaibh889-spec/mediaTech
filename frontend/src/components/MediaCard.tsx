@@ -59,7 +59,7 @@ export function MediaCard({ data }: MediaCardProps) {
   };
 
   const captionText = data.caption?.trim() || "";
-  const hashtagsText = data.hashtags?.join(" ").trim() || "";
+
   // Combine caption and hashtags — deduplicate hashtags that are already in caption
   const captionHashtags: string[] = captionText.match(/#[\w\u0900-\u097F]+/g) || [];
   const uniqueHashtags = data.hashtags?.filter(

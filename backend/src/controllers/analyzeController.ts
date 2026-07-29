@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response } from 'express';
 import { z } from 'zod';
 import { extractMetadata } from '../services/mediaService';
 
@@ -6,7 +6,7 @@ const analyzeSchema = z.object({
   url: z.string().url('Invalid URL format'),
 });
 
-export const analyzeUrl = async (req: Request, res: Response, next: NextFunction) => {
+export const analyzeUrl = async (req: Request, res: Response) => {
   try {
     const parseResult = analyzeSchema.safeParse(req.body);
     if (!parseResult.success) {
@@ -23,11 +23,12 @@ export const analyzeUrl = async (req: Request, res: Response, next: NextFunction
       success: true,
       ...metadata,
     });
-  } catch (error: any) {
-    console.error('Error analyzing URL:', error.message);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Failed to analyze the provided URL.';
+    console.error('Error analyzing URL:', message);
     res.status(500).json({
       success: false,
-      message: error.message || 'Failed to analyze the provided URL. Make sure it is public and supported.'
+      message,
     });
   }
 };

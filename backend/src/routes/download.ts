@@ -7,10 +7,8 @@ const router = Router();
 
 function getYtDlpBinary(): string {
   const binaryName = process.platform === 'win32' ? 'yt-dlp.exe' : 'yt-dlp';
-  // On Render, yt-dlp-exec installs the binary here
   const execBin = path.join(process.cwd(), 'node_modules', 'yt-dlp-exec', 'bin', binaryName);
   if (fs.existsSync(execBin)) return execBin;
-  // Fallback: system yt-dlp
   return 'yt-dlp';
 }
 
@@ -93,12 +91,9 @@ router.get('/', (req: Request, res: Response) => {
   const safeFilename = filename.replace(/[<>:"/\\|?*\x00-\x1f]/g, '').trim() || 'media-download.mp4';
   const contentType = isAudio ? 'audio/mpeg' : 'video/mp4';
 
-  res.setHeader('Content-Type', contentType);
-  res.setHeader('Content-Disposition', `attachment; filename="${safeFilename}"`);
-  res.setHeader('Cache-Control', 'no-store');
-
   let stderr = '';
   let headersSent = false;
+  let bytesStreamed = 0;
 
   proc.stderr.on('data', (data: Buffer) => {
     stderr += data.toString();
@@ -106,8 +101,13 @@ router.get('/', (req: Request, res: Response) => {
 
   proc.stdout.on('data', (chunk: Buffer) => {
     if (!headersSent) {
+      // Defer headers until we know yt-dlp is producing output
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Content-Disposition', `attachment; filename="${safeFilename}"`);
+      res.setHeader('Cache-Control', 'no-store');
       headersSent = true;
     }
+    bytesStreamed += chunk.length;
     res.write(chunk);
   });
 
@@ -122,6 +122,8 @@ router.get('/', (req: Request, res: Response) => {
         stderr.includes('private') ||
         stderr.includes('age-restricted');
 
+      console.error(`[Download] yt-dlp failed (code ${code}): ${stderr.slice(0, 500)}`);
+
       res.status(502).json({
         success: false,
         message: isAuthError
@@ -130,12 +132,17 @@ router.get('/', (req: Request, res: Response) => {
       });
       return;
     }
+
+    if (bytesStreamed > 0) {
+      const sizeMB = (bytesStreamed / (1024 * 1024)).toFixed(2);
+      console.log(`[Download] Completed: ${safeFilename} (${sizeMB} MB)`);
+    }
     res.end();
   });
 
   proc.on('error', (err) => {
     if (!headersSent) {
-      console.error('Failed to spawn yt-dlp:', err);
+      console.error('[Download] Failed to spawn yt-dlp:', err);
       res.status(500).json({ success: false, message: 'Failed to start download process.' });
     }
   });

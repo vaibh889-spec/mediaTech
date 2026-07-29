@@ -1,6 +1,32 @@
-.vercel
-.env*
+# Dependencies
 node_modules
+
+# Build output
+dist
+out
+.next
+
+# Environment files
+.env*
+!.env.example
+
+# Deployment configs (cleaned up)
+.vercel
+.wrangler
 cloudflared.exe
-*.log
+
+# OS files
 .DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# IDE
+.vscode
+.idea
+
+# Misc
+*.pem
+cookies.txt
